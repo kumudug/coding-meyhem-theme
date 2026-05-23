@@ -875,7 +875,7 @@ body.item-view .page-outer > .sidebar { display: none; }
   display: grid;
   grid-template-columns: 1.6fr 1fr 1fr 1fr;
   gap: 36px;
-  padding: 40px 0;
+  padding: 40px 16px 40px 0;
   align-items: start;
 }
 @media (max-width: 800px) { .footer-inner { grid-template-columns: 1fr 1fr; gap: 24px; } }
@@ -1021,6 +1021,12 @@ body#layout .page-outer > .sidebar { display: block; }
             <svg fill='none' stroke='currentColor' stroke-linecap='round' stroke-width='1.8' viewBox='0 0 24 24'>
               <circle cx='12' cy='12' r='4'/>
               <path d='M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41'/>
+            </svg>
+          </button>
+          <button aria-label='System theme' data-mode='system' onclick='cmSetTheme(&quot;system&quot;)' type='button'>
+            <svg fill='none' stroke='currentColor' stroke-linecap='round' stroke-width='1.8' viewBox='0 0 24 24'>
+              <rect height='14' rx='2' width='18' x='3' y='3'/>
+              <path d='M3 13h18M8 21h8M12 17v4'/>
             </svg>
           </button>
           <button aria-label='Dark theme' data-mode='dark' onclick='cmSetTheme(&quot;dark&quot;)' type='button'>
@@ -1553,15 +1559,34 @@ body#layout .page-outer > .sidebar { display: block; }
   <script>
     //<![CDATA[
     /* Theme toggle */
+    var cmOsQuery = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
+    function cmApplyTheme(mode){
+      var resolved = mode === 'system'
+        ? (cmOsQuery && cmOsQuery.matches ? 'dark' : 'light')
+        : mode;
+      document.documentElement.setAttribute('data-theme', resolved);
+    }
     function cmSetTheme(mode){
-      document.documentElement.setAttribute('data-theme', mode);
-      try { localStorage.setItem('cm-theme', mode); } catch(e){}
+      if (mode === 'system') {
+        try { localStorage.removeItem('cm-theme'); } catch(e){}
+      } else {
+        try { localStorage.setItem('cm-theme', mode); } catch(e){}
+      }
+      cmApplyTheme(mode);
       cmPaintThemeSwitch();
     }
     function cmPaintThemeSwitch(){
-      var mode = document.documentElement.getAttribute('data-theme') || 'light';
+      var saved = (function(){ try { return localStorage.getItem('cm-theme'); } catch(e){ return null; } })();
+      var active = saved || 'system';
       document.querySelectorAll('.theme-switch button').forEach(function(b){
-        b.classList.toggle('is-active', b.getAttribute('data-mode') === mode);
+        b.classList.toggle('is-active', b.getAttribute('data-mode') === active);
+      });
+    }
+    /* Live OS preference changes — only applies when user hasn't set an explicit choice */
+    if (cmOsQuery && cmOsQuery.addEventListener) {
+      cmOsQuery.addEventListener('change', function(e){
+        try { if (localStorage.getItem('cm-theme')) return; } catch(ex){}
+        document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
       });
     }
 
