@@ -113,7 +113,7 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  padding: 14px 0;
+  padding: 14px 0 14px 16px;
 }
 .brand { display: flex; align-items: center; gap: 10px; }
 .brand-logo {
