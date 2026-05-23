@@ -1702,6 +1702,22 @@ body#layout .page-outer > .sidebar { display: block; }
       cmBuildTOC();
       cmProgress();
       cmLoadAdjacent();
+
+      /* Remove the featured image Blogger auto-inserts into the body,
+         since we already render it as a full-width cover above the post. */
+      (function() {
+        var cover = document.querySelector('.post-cover img');
+        if (!cover) return;
+        var m = cover.src.match(/\/([A-Za-z0-9_-]{40,})\//);
+        if (!m) return;
+        var imgId = m[1];
+        document.querySelectorAll('.post-body img').forEach(function(img) {
+          if (img.src.indexOf(imgId) !== -1) {
+            var p = img.closest('p') || img.parentElement;
+            p.style.display = 'none';
+          }
+        });
+      })();
     });
     //]]>
   </script>
