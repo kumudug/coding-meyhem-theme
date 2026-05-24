@@ -113,7 +113,7 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  padding: 14px 0;
+  padding: 14px 0 14px 16px;
 }
 .brand { display: flex; align-items: center; gap: 10px; }
 .brand-logo {
@@ -288,10 +288,9 @@ body {
 }
 .posts-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 24px;
 }
-@media (max-width: 1100px) { .posts-grid { grid-template-columns: 1fr; } }
 body.feed-view .page-outer {
   display: grid;
   grid-template-columns: 1fr 300px;
@@ -487,6 +486,8 @@ body.item-view .page-outer > .sidebar { display: none; }
   padding: 32px 0;
 }
 @media (max-width: 1024px) { .post-layout { grid-template-columns: 1fr; gap: 24px; } }
+.post-layout.no-toc { grid-template-columns: 1fr; }
+.post-layout.no-toc .post-toc { display: none; }
 
 .post-toc { position: sticky; top: 80px; }
 .post-toc-title {
@@ -858,8 +859,11 @@ body.item-view .page-outer > .sidebar { display: none; }
   transition: border-color .15s, color .15s;
 }
 .blog-pager a:hover { border-color: var(--accent); color: var(--accent); }
-.blog-pager #blog-pager-newer-link { margin-right: auto; }
-.blog-pager #blog-pager-older-link { margin-left: auto; }
+.blog-pager a[id$='blog-pager-newer-link'] { margin-right: auto; }
+.blog-pager a[id$='blog-pager-older-link'] { margin-left: auto; }
+
+/* Suppress Blogger's built-in pager injected inside the posts grid by super.main */
+.posts-grid .blog-pager { display: none !important; }
 
 /* ── Footer ──────────────────────────────────────────── */
 .site-footer {
@@ -871,9 +875,13 @@ body.item-view .page-outer > .sidebar { display: none; }
   display: grid;
   grid-template-columns: 1.6fr 1fr 1fr 1fr;
   gap: 36px;
-  padding: 40px 0;
+  padding: 40px 16px 40px 0;
+  align-items: start;
 }
 @media (max-width: 800px) { .footer-inner { grid-template-columns: 1fr 1fr; gap: 24px; } }
+.footer-brand {
+  padding-left: 16px;
+}
 .footer-brand p {
   margin: 12px 0 16px;
   font-size: 14px; line-height: 1.6;
@@ -941,6 +949,15 @@ body.item-view .page-outer > .sidebar { display: none; }
 .no-posts-message { padding: 60px 0; text-align: center; color: var(--muted); }
 iframe.b-hbp-video { border: 0; }
 .blogger-logo, .svg-icon-24.blogger-logo { fill: var(--muted); opacity: .5; }
+/* Attribution widget inside footer — shrink Blogger icon to match link style */
+.footer-attribution .widget-content { all: unset; }
+.footer-attribution .blogger { display: block; }
+.footer-attribution .blogger a {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 14px; color: var(--body); text-decoration: none;
+}
+.footer-attribution .blogger a:hover { color: var(--accent); }
+.footer-attribution .svg-icon-24 { width: 16px; height: 16px; flex-shrink: 0; }
 
 /* Layout edit mode polish */
 body#layout .container, body#layout .container-narrow { padding: 16px; }
@@ -1006,6 +1023,12 @@ body#layout .page-outer > .sidebar { display: block; }
               <path d='M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41'/>
             </svg>
           </button>
+          <button aria-label='System theme' data-mode='system' onclick='cmSetTheme(&quot;system&quot;)' type='button'>
+            <svg fill='none' stroke='currentColor' stroke-linecap='round' stroke-width='1.8' viewBox='0 0 24 24'>
+              <rect height='14' rx='2' width='18' x='3' y='3'/>
+              <path d='M3 13h18M8 21h8M12 17v4'/>
+            </svg>
+          </button>
           <button aria-label='Dark theme' data-mode='dark' onclick='cmSetTheme(&quot;dark&quot;)' type='button'>
             <svg fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.8' viewBox='0 0 24 24'>
               <path d='M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79Z'/>
@@ -1058,7 +1081,7 @@ body#layout .page-outer > .sidebar { display: block; }
                   </aside>
                   <div class='post-main'>
                     <b:include data='this' name='super.main'/>
-                    <b:include name='nextprev'/>
+                    <b:include name='pager'/>
                   </div>
                 </div>
               </div>
@@ -1109,7 +1132,7 @@ body#layout .page-outer > .sidebar { display: block; }
                   <b:include data='this' name='super.main'/>
                 </div>
               </b:with>
-              <b:include name='nextprev'/>
+              <b:include name='pager'/>
             </b:if>
           </b:includable>
 
@@ -1245,7 +1268,10 @@ body#layout .page-outer > .sidebar { display: block; }
             </b:if>
           </b:includable>
 
-          <b:includable id='nextprev'>
+          <!-- suppress super.main's built-in pagination; we render it explicitly -->
+          <b:includable id='nextprev'/>
+
+          <b:includable id='pager'>
             <div class='blog-pager' id='blog-pager'>
               <b:if cond='data:newerPageUrl'>
                 <a expr:href='data:newerPageUrl' id='blog-pager-newer-link'>← Newer</a>
@@ -1533,15 +1559,34 @@ body#layout .page-outer > .sidebar { display: block; }
   <script>
     //<![CDATA[
     /* Theme toggle */
+    var cmOsQuery = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
+    function cmApplyTheme(mode){
+      var resolved = mode === 'system'
+        ? (cmOsQuery && cmOsQuery.matches ? 'dark' : 'light')
+        : mode;
+      document.documentElement.setAttribute('data-theme', resolved);
+    }
     function cmSetTheme(mode){
-      document.documentElement.setAttribute('data-theme', mode);
-      try { localStorage.setItem('cm-theme', mode); } catch(e){}
+      if (mode === 'system') {
+        try { localStorage.removeItem('cm-theme'); } catch(e){}
+      } else {
+        try { localStorage.setItem('cm-theme', mode); } catch(e){}
+      }
+      cmApplyTheme(mode);
       cmPaintThemeSwitch();
     }
     function cmPaintThemeSwitch(){
-      var mode = document.documentElement.getAttribute('data-theme') || 'light';
+      var saved = (function(){ try { return localStorage.getItem('cm-theme'); } catch(e){ return null; } })();
+      var active = saved || 'system';
       document.querySelectorAll('.theme-switch button').forEach(function(b){
-        b.classList.toggle('is-active', b.getAttribute('data-mode') === mode);
+        b.classList.toggle('is-active', b.getAttribute('data-mode') === active);
+      });
+    }
+    /* Live OS preference changes — only applies when user hasn't set an explicit choice */
+    if (cmOsQuery && cmOsQuery.addEventListener) {
+      cmOsQuery.addEventListener('change', function(e){
+        try { if (localStorage.getItem('cm-theme')) return; } catch(ex){}
+        document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
       });
     }
 
@@ -1618,8 +1663,8 @@ body#layout .page-outer > .sidebar { display: block; }
       if (!list || !body) return;
       var heads = body.querySelectorAll('h2, h3');
       if (heads.length < 2) {
-        var toc = document.getElementById('post-toc');
-        if (toc) toc.style.display = 'none';
+        var layout = document.querySelector('.post-layout');
+        if (layout) layout.classList.add('no-toc');
         return;
       }
       heads.forEach(function(h, i){
