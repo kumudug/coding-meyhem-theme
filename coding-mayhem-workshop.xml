@@ -1190,6 +1190,10 @@ body#layout .page-outer > .sidebar { display: block; }
                   </div>
                 </section>
               </b:if>
+              <!-- Featured posts placeholder (homepage only, populated via JS) -->
+              <b:if cond='data:view.isHomepage'>
+                <div id='featured-section' class='featured-section'></div>
+              </b:if>
               <!-- INDEX views (home minus hero, label, archive, search): post cards grid -->
               <b:with value='data:view.isHomepage ? (data:posts filter (post =&gt; post.id != data:posts.first.id)) : data:posts' var='posts'>
                 <div class='posts-grid' id='posts-grid'>
