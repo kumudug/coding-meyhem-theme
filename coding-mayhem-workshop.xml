@@ -1807,6 +1807,87 @@ body#layout .page-outer > .sidebar { display: block; }
       grid.innerHTML = out.join('');
     };
 
+    /* Featured posts */
+    function cmLoadFeatured() {
+      var section = document.getElementById('featured-section');
+      if (!section) return;
+      var feed = (window.location.origin || '') +
+        '/feeds/posts/default/-/featured?alt=json-in-script&max-results=3&callback=cmFeatured';
+      var s = document.createElement('script');
+      s.src = feed;
+      document.body.appendChild(s);
+    }
+    window.cmFeatured = function(data) {
+      var section = document.getElementById('featured-section');
+      if (!section || !data || !data.feed || !data.feed.entry || !data.feed.entry.length) return;
+      var entries = data.feed.entry;
+      function getUrl(e) {
+        for (var i = 0; i < e.link.length; i++) {
+          if (e.link[i].rel === 'alternate') return e.link[i].href;
+        }
+        return '#';
+      }
+      function getThumb(e) {
+        if (e.media$thumbnail && e.media$thumbnail.url) {
+          return e.media$thumbnail.url.replace(/\/s\d+(-c)?\//, '/s720/');
+        }
+        return '';
+      }
+      function fmtDate(str) {
+        return new Date(str).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      }
+      function getLabel(e) {
+        if (e.category) {
+          for (var i = 0; i < e.category.length; i++) {
+            if (e.category[i].term.toLowerCase() !== 'featured') return e.category[i].term;
+          }
+        }
+        return '';
+      }
+      var html = '<div class="featured-label">★ featured</div><div class="featured-grid">';
+      var e0 = entries[0];
+      var url0 = getUrl(e0);
+      var title0 = (e0.title && e0.title.$t) || '';
+      var excerpt0 = (e0.summary && e0.summary.$t) || '';
+      if (excerpt0.length > 120) excerpt0 = excerpt0.slice(0, 120).replace(/\s\S+$/, '') + '…';
+      var thumb0 = getThumb(e0);
+      var label0 = getLabel(e0);
+      html += '<a class="featured-big-card" href="' + url0 + '">';
+      html += '<div class="featured-big-card-cover">' +
+        (thumb0
+          ? '<img src="' + thumb0 + '" alt="' + title0.replace(/"/g, '&quot;') + '">'
+          : '<div class="featured-fallback">NO COVER</div>') +
+        '</div>';
+      html += '<div class="featured-big-card-body">';
+      if (label0) html += '<span class="featured-big-card-tag">#' + label0 + '</span>';
+      html += '<h3 class="featured-big-card-title">' + title0 + '</h3>';
+      if (excerpt0) html += '<p class="featured-big-card-excerpt">' + excerpt0 + '</p>';
+      html += '<span class="featured-big-card-date">' + fmtDate(e0.published.$t) + '</span>';
+      html += '</div></a>';
+      if (entries.length > 1) {
+        html += '<div class="featured-small-cards">';
+        for (var i = 1; i < entries.length; i++) {
+          var e = entries[i];
+          var url = getUrl(e);
+          var title = (e.title && e.title.$t) || '';
+          var thumb = getThumb(e);
+          html += '<a class="featured-small-card" href="' + url + '">';
+          html += '<div class="featured-small-card-thumb">' +
+            (thumb
+              ? '<img src="' + thumb + '" alt="' + title.replace(/"/g, '&quot;') + '">'
+              : '<div class="featured-fallback">NO COVER</div>') +
+            '</div>';
+          html += '<div class="featured-small-card-body">' +
+            '<h3 class="featured-small-card-title">' + title + '</h3>' +
+            '<span class="featured-small-card-date">' + fmtDate(e.published.$t) + '</span>' +
+            '</div></a>';
+        }
+        html += '</div>';
+      }
+      html += '</div>';
+      section.innerHTML = html;
+    };
+
     /* Boot */
     document.addEventListener('DOMContentLoaded', function(){
       cmPaintThemeSwitch();
@@ -1815,6 +1896,7 @@ body#layout .page-outer > .sidebar { display: block; }
       cmBuildTOC();
       cmProgress();
       cmLoadAdjacent();
+      cmLoadFeatured();
 
       /* Remove the featured image Blogger auto-inserts into the body,
          since we already render it as a full-width cover above the post. */
