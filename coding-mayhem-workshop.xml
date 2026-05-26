@@ -179,7 +179,7 @@ body {
 }
 
 /* ── Hero (homepage) ─────────────────────────────────── */
-.hero { padding: 56px 0 24px; }
+.hero { padding: 0 0 24px; }
 .hero-grid {
   display: grid;
   grid-template-columns: 1.05fr 1fr;
@@ -279,7 +279,16 @@ body {
 .posts-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 24px;
+  gap: 32px;
+}
+.posts-grid .blog-posts {
+  padding: 0;
+  max-width: none;
+  margin: 0;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 32px;
 }
 body.feed-view .page-outer {
   display: grid;
@@ -362,6 +371,7 @@ body.item-view .page-outer > .sidebar { display: none; }
 
 /* ── Sidebar ─────────────────────────────────────────── */
 .sidebar { display: grid; gap: 22px; align-content: start; }
+.sidebar .sidebar-section { display: grid; gap: 22px; }
 .sidebar-card {
   background: var(--surface);
   border: 1px solid var(--rule);
@@ -1154,7 +1164,7 @@ body#layout .page-outer > .sidebar { display: block; }
               <!-- HOMEPAGE: hero from first post, then grid of remaining posts -->
               <b:if cond='data:view.isHomepage and data:posts.any'>
                 <section class='hero'>
-                  <div class='container hero-grid'>
+                  <div class='hero-grid'>
                     <div>
                       <span class='hero-kicker'>
                         <span class='dot'></span>
